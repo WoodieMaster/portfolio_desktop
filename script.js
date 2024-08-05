@@ -28,6 +28,8 @@ function setup_scale_listener(cwindow, scale_element, scaling) {
     let width = 0;
     let height = 0;
     const movement_event = (event) => {
+        event.stopPropagation();
+        select_window(cwindow);
         if (scaling.x != ScaleOptions.NONE) {
             let dx = scaling.x == ScaleOptions.END ? event.x - mp_x : mp_x - event.x;
             let newWidth = width + dx;
@@ -41,7 +43,7 @@ function setup_scale_listener(cwindow, scale_element, scaling) {
         if (scaling.y != ScaleOptions.NONE) {
             let dy = scaling.y == ScaleOptions.END ? event.y - mp_y : mp_y - event.y;
             let newHeight = height + dy;
-            if (newHeight < windowMinWidth)
+            if (newHeight < windowMinHeight)
                 newHeight = windowMinHeight;
             cwindow.style.height = newHeight + "px";
             if (scaling.y == ScaleOptions.START) {
@@ -141,9 +143,13 @@ function make_window(name, icon_src, body, id) {
     scaleRight.className = "w-scale-right";
     scaleTop.className = "w-scale-top";
     scaleBottom.className = "w-scale-bottom";
+    //container
+    const container = document.createElement("div");
+    container.className = "w-container";
+    cwindow.appendChild(container);
     // end
-    cwindow.appendChild(header);
-    cwindow.appendChild(body);
+    container.appendChild(header);
+    container.appendChild(body);
     cwindow.appendChild(scaleLeft);
     cwindow.appendChild(scaleBottom);
     cwindow.appendChild(scaleRight);
