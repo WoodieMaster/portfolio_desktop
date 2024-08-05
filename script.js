@@ -16,6 +16,50 @@ function select_window(cwindow) {
     (_a = document.querySelector(".w-active")) === null || _a === void 0 ? void 0 : _a.classList.remove(select_class);
     cwindow.classList.add(select_class);
 }
+var ScaleOptions;
+(function (ScaleOptions) {
+    ScaleOptions[ScaleOptions["NONE"] = 0] = "NONE";
+    ScaleOptions[ScaleOptions["START"] = 1] = "START";
+    ScaleOptions[ScaleOptions["END"] = 2] = "END";
+})(ScaleOptions || (ScaleOptions = {}));
+function setup_scale_listener(cwindow, scale_element, scaling) {
+    let mp_x = 0;
+    let mp_y = 0;
+    let width = 0;
+    let height = 0;
+    const movement_event = (event) => {
+        if (scaling.x != ScaleOptions.NONE) {
+            let dx = scaling.x == ScaleOptions.END ? event.x - mp_x : mp_x - event.x;
+            let newWidth = width + dx;
+            if (newWidth < windowMinWidth)
+                newWidth = windowMinWidth;
+            cwindow.style.width = newWidth + "px";
+            if (scaling.x == ScaleOptions.START) {
+                cwindow.style.left = event.x + "px";
+            }
+        }
+        if (scaling.y != ScaleOptions.NONE) {
+            let dy = scaling.y == ScaleOptions.END ? event.y - mp_y : mp_y - event.y;
+            let newHeight = height + dy;
+            if (newHeight < windowMinWidth)
+                newHeight = windowMinHeight;
+            cwindow.style.height = newHeight + "px";
+            if (scaling.y == ScaleOptions.START) {
+                cwindow.style.top = event.y + "px";
+            }
+        }
+    };
+    scale_element.addEventListener("mousedown", (e) => {
+        e.stopPropagation();
+        mp_x = e.x;
+        mp_y = e.y;
+        const bounds = cwindow.getBoundingClientRect();
+        width = bounds.width;
+        height = bounds.height;
+        document.addEventListener("mousemove", movement_event);
+    });
+    document.addEventListener("mouseup", () => document.removeEventListener("mousemove", movement_event));
+}
 function setup_event_listeners(cwindow, header) {
     let off_x = 0;
     let off_y = 0;
@@ -53,18 +97,17 @@ function setup_event_listeners(cwindow, header) {
 }
 function make_window(name, icon_src, body, id) {
     // result setup
-    const result = document.createElement("div");
-    result.className = "window";
-    result.id = id;
+    const cwindow = document.createElement("div");
+    cwindow.className = "window";
+    cwindow.id = id;
     // result dimensions / positions
-    result.style.width = window.innerWidth / 2 + "px";
-    result.style.height = window.innerHeight / 2 + "px";
-    result.style.left = window.innerWidth / 4 + "px";
-    result.style.top = window.innerHeight / 4 + "px";
+    cwindow.style.width = window.innerWidth / 2 + "px";
+    cwindow.style.height = window.innerHeight / 2 + "px";
+    cwindow.style.left = window.innerWidth / 4 + "px";
+    cwindow.style.top = window.innerHeight / 4 + "px";
     // header
     const header = document.createElement("div");
     header.className = "w-header";
-    setup_event_listeners(result, header);
     //- buttons
     const buttons = document.createElement("div");
     buttons.className = "w-buttons";
@@ -73,7 +116,7 @@ function make_window(name, icon_src, body, id) {
     const closeButton = document.createElement("button");
     closeButton.className = "w-close";
     closeButton.textContent = "x";
-    closeButton.onclick = () => { result.remove(); };
+    closeButton.onclick = () => { cwindow.remove(); };
     buttons.appendChild(closeButton);
     //- name span
     const nameSpan = document.createElement("span");
@@ -99,14 +142,19 @@ function make_window(name, icon_src, body, id) {
     scaleTop.className = "w-scale-top";
     scaleBottom.className = "w-scale-bottom";
     // end
-    result.appendChild(header);
-    result.appendChild(body);
-    result.appendChild(scaleLeft);
-    result.appendChild(scaleBottom);
-    result.appendChild(scaleRight);
-    result.appendChild(scaleTop);
-    select_window(result);
-    return result;
+    cwindow.appendChild(header);
+    cwindow.appendChild(body);
+    cwindow.appendChild(scaleLeft);
+    cwindow.appendChild(scaleBottom);
+    cwindow.appendChild(scaleRight);
+    cwindow.appendChild(scaleTop);
+    select_window(cwindow);
+    setup_event_listeners(cwindow, header);
+    setup_scale_listener(cwindow, scaleLeft, { x: ScaleOptions.START, y: ScaleOptions.NONE });
+    setup_scale_listener(cwindow, scaleRight, { x: ScaleOptions.END, y: ScaleOptions.NONE });
+    setup_scale_listener(cwindow, scaleTop, { x: ScaleOptions.NONE, y: ScaleOptions.START });
+    setup_scale_listener(cwindow, scaleBottom, { x: ScaleOptions.NONE, y: ScaleOptions.END });
+    return cwindow;
 }
 function add_app_list() {
     app_list_element.innerHTML = "";
@@ -153,6 +201,8 @@ const apps = [
     }))
 ];
 const appIdPrefix = "app-";
+const windowMinHeight = 30;
+const windowMinWidth = 50;
 let np_text = "";
 const app_list_element = document.querySelector("#menu .wrapper");
 window.addEventListener("contextmenu", (e) => e.preventDefault());
