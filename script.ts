@@ -13,7 +13,23 @@ enum ScaleOptions {
     END
 }
 
-function setup_scale_listener(cwindow: HTMLDivElement, scale_element: HTMLDivElement, scaling: {x: ScaleOptions, y: ScaleOptions}) {
+function create_window_resizer(cwindow: HTMLDivElement, scaling: {x: ScaleOptions, y: ScaleOptions}) {
+    const element = document.createElement("div");
+
+    if(scaling.x == ScaleOptions.START) element.classList.add("w-scale-left")
+    else if(scaling.x == ScaleOptions.END) element.classList.add("w-scale-right")
+
+    if(scaling.y == ScaleOptions.START) element.classList.add("w-scale-top")
+    else if(scaling.y == ScaleOptions.END) element.classList.add("w-scale-bottom")
+
+    window_resizer_listeners(cwindow, element, scaling);
+
+    console.log(scaling)
+
+    cwindow.appendChild(element);
+}
+
+function window_resizer_listeners(cwindow: HTMLDivElement, scale_element: HTMLDivElement, scaling: {x: ScaleOptions, y: ScaleOptions}) {
     let mp_x = 0;
     let mp_y = 0;
     let width = 0;
@@ -159,16 +175,13 @@ function make_window(name: string, icon_src: string, body: HTMLElement, id: stri
     body.classList.add("w-body");
 
 
-    //scalar detector
-    const scaleLeft = document.createElement("div");
-    const scaleRight = document.createElement("div");
-    const scaleTop = document.createElement("div");
-    const scaleBottom = document.createElement("div");
-
-    scaleLeft.className = "w-scale-left";
-    scaleRight.className = "w-scale-right";
-    scaleTop.className = "w-scale-top";
-    scaleBottom.className = "w-scale-bottom";
+    //resizing detectors
+    for(let x = 0; x < 3; x++) {
+        for(let y = 0; y < 3; y++) {
+            if(x === ScaleOptions.NONE && y === ScaleOptions.NONE) continue;
+            create_window_resizer(cwindow, {x, y});
+        }
+    }
 
     //container
     const container = document.createElement("div");
@@ -180,76 +193,143 @@ function make_window(name: string, icon_src: string, body: HTMLElement, id: stri
     container.appendChild(header);
     container.appendChild(body);
 
-    cwindow.appendChild(scaleLeft);
-    cwindow.appendChild(scaleBottom);
-    cwindow.appendChild(scaleRight);
-    cwindow.appendChild(scaleTop);
-
     select_window(cwindow);
     setup_event_listeners(cwindow, header);
-
-    setup_scale_listener(cwindow, scaleLeft, {x: ScaleOptions.START, y: ScaleOptions.NONE});
-    setup_scale_listener(cwindow, scaleRight, {x: ScaleOptions.END, y: ScaleOptions.NONE});
-    setup_scale_listener(cwindow, scaleTop, {x: ScaleOptions.NONE, y: ScaleOptions.START});
-    setup_scale_listener(cwindow, scaleBottom, {x: ScaleOptions.NONE, y: ScaleOptions.END});
 
     return cwindow;
 }
 
-function add_app_list() {
-    app_list_element.innerHTML = "";
-    for(const app of apps) {
+function setup_menu() {
+    menu_element.innerHTML = "";
+    for(const app of apps.values()) {
         const app_element = document.createElement("img");
         app_element.src = app.icon_src;
 
         app_element.addEventListener("click", () => {
-            const current = document.getElementById(appIdPrefix+app.id);
-            if(current != null) return current.remove();
+            if(app.is_active) app.close();
+            else app.start();
+        });
 
-            app.on_start(app);
-        })
+        app_element.addEventListener("mouseenter", () => {
+            menu_info_element.textContent = app.name;
+            menu_info_element.classList.remove("hidden");
+        });
 
-        app_list_element.appendChild(app_element);
+        app_element.addEventListener("mouseleave", () => {
+            menu_info_element.classList.add("hidden");
+        });
+
+        menu_element.appendChild(app_element);
     }
 }
+
+type WindowState = {id: string, x: number, y: number, w:number, h:number};
 
 class App {
     name: string;
     id: string;
     icon_src: string;
-    on_start: (app: App) => void
+    on_start: (app: App) => HTMLElement | null;
+    element: HTMLElement | null = null;
+    is_active: boolean = false;
 
-    constructor(name: string, id: string, icon_src: string, on_start: (app: App)=>void) {
+    constructor(name: string, id: string, icon_src: string, on_start: (app: App)=>HTMLElement | null) {
         this.name = name;
         this.id = id;
         this.icon_src = icon_src;
-        this.on_start = on_start.bind(this);
+        this.on_start = on_start;
+    }
+
+    start() {
+        this.element = this.on_start(this);
+
+        if(this.element !== null) {
+            document.body.appendChild(this.element);
+        }
+        this.is_active = true;
+    }
+
+    close() {
+        if(this.element !== null) {
+            this.element.remove();
+            this.element = null;
+        }
+
+        this.is_active = false;
+    }
+
+    register() {
+        apps.set(this.id, this);
+    }
+
+    getWindowState(): WindowState | undefined {
+        if(this.element != null) {
+            const bounds = this.element.getBoundingClientRect();
+
+            return {
+                id: this.id,
+                x: bounds.left,
+                y: bounds.top,
+                w: bounds.width,
+                h: bounds.height,
+            }
+        }
+
+        return undefined;
+    }
+
+    setWindowState(state: WindowState) {
+        if (!this.is_active) this.start();
+
+        if(this.element === null) return;
+
+        this.element.style.left = state.x + "px";
+        this.element.style.top = state.y + "px";
+
+
+        this.element.style.width = state.w + "px";
+        this.element.style.height = state.h + "px";
     }
 }
 
-const apps: App[] = [
-    new App("Settings", "settings", "assets/settings.svg", async (app: App) => {
-        const content = document.createElement("div");
-        content.innerHTML = "<h1>BALLS</h1>";
+function loadLocalStorage() {
+    const app_state = localStorage.getItem("app-states");
+    if(app_state !== null) {
+        for(const state of JSON.parse(app_state) as WindowState[]) {
+            const app = apps.get(state.id);
 
-        document.body.appendChild(make_window(app.name, app.icon_src, content, appIdPrefix+app.id));
-    }),
-    new App("Notepad", "np","assets/notepad.svg",async (app: App) => {
-        const content = document.createElement("textarea");
-        content.onchange = () => {
-            localStorage.setItem("app-np-text", content.value);
-            console.log(np_text)
+            if(app === undefined) continue;
+
+            app.setWindowState(state);
         }
-        content.value = localStorage.getItem("app-np-text") ?? "";
-        document.body.appendChild(make_window(app.name, app.icon_src, content, appIdPrefix+app.id));
-    }),
-    new App("Custom Browser","browser","assets/browser.svg", async(app: App) => {
-        const content = document.createElement("iframe");
-        content.src = "https://google.com";
+    }
+}
 
-        document.body.appendChild(make_window(app.name, app.icon_src, content, appIdPrefix+app.id));
-    })
-];
+const apps: Map<string, App> = new Map();
+
+new App("Notepad", "np","assets/notepad.svg",(app: App) => {
+    const content = document.createElement("textarea");
+    content.onchange = () => {
+        localStorage.setItem("app-np-text", content.value);
+        console.log(np_text)
+    }
+    content.value = localStorage.getItem("app-np-text") ?? "";
+    return make_window(app.name, app.icon_src, content, appIdPrefix+app.id);
+}).register();
+
+new App("Settings", "settings", "assets/settings.svg", (app: App) => {
+    const content = document.createElement("div");
+    content.innerHTML = "<h1>BALLS</h1>";
+
+    return make_window(app.name, app.icon_src, content, appIdPrefix+app.id);
+}).register();
+
+new App("Custom Browser","browser","assets/browser.svg", (app: App) => {
+    const content = document.createElement("iframe");
+    content.src = "https://google.com";
+
+    return make_window(app.name, app.icon_src, content, appIdPrefix+app.id);
+}).register();
 
 const appIdPrefix = "app-";
 const windowMinHeight = 30;
@@ -257,8 +337,25 @@ const windowMinWidth = 50;
 
 let np_text = "";
 
-const app_list_element = document.querySelector("#menu .wrapper") as HTMLDivElement;
+const menu_element = document.querySelector("#menu .wrapper") as HTMLDivElement;
+const menu_info_element = document.querySelector("#menu-info") as HTMLParagraphElement;
 
 window.addEventListener("contextmenu", (e) => e.preventDefault())
 
-add_app_list();
+loadLocalStorage();
+
+setup_menu();
+
+window.addEventListener('beforeunload', () => {
+    const window_states: WindowState[] = [];
+
+    for(const app of apps.values()) {
+        const state = app.getWindowState();
+
+        if (state === undefined) continue;
+
+        window_states.push(state);
+    }
+    localStorage.setItem("app-states", JSON.stringify(window_states));
+});
+

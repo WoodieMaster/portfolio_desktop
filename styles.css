@@ -6,6 +6,9 @@
 
 :root {
     font-family: Helvetica, serif;
+
+    --menu-bottom: 3%;
+    --menu-height: 60px
 }
 
 body {
@@ -23,8 +26,8 @@ body {
 
 #menu {
     position: absolute;
-    bottom: 3%;
-    height: 7%;
+    bottom: var(--menu-bottom);
+    height: var(--menu-height);
     left: 50%;
     transform: translateX(-50%);
     width: 50%;
@@ -67,6 +70,23 @@ body {
     }
 }
 
+#menu-info {
+    color: white;
+    background: #000000AA;
+    position: absolute;
+    padding: 5px 10px;
+    border-radius: 3px;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: calc(var(--menu-bottom) + var(--menu-height) + 10px);
+
+}
+
+#menu-info.hidden {
+    opacity: 0;
+    transition: opacity .3s;
+}
+
 .window {
     --border-radius: 20px;
     --scale-size: 5px;
@@ -86,21 +106,29 @@ body {
     .w-scale-left, .w-scale-right, .w-scale-top, .w-scale-bottom {
         position: absolute;
         inset: 0;
-        z-index: 1;
-
     };
 
-    .w-scale-left { right: 100%; left: calc(0px - var(--scale-size)); }
-    .w-scale-right { left: 100%; right: calc(0px - var(--scale-size)); }
-    .w-scale-top { bottom: 100%; top: calc(0px - var(--scale-size)); }
-    .w-scale-bottom { top: 100%; bottom: calc(0px - var(--scale-size)); }
+    .w-scale-left { right: calc(100% - var(--scale-size)); left: calc(0px - var(--scale-size)); }
+    .w-scale-right { left: calc(100% - var(--scale-size)); right: calc(0px - var(--scale-size)); }
+    .w-scale-top { bottom: calc(100% - var(--scale-size)); top: calc(0px - var(--scale-size)); }
+    .w-scale-bottom { top: calc(100% - var(--scale-size)); bottom: calc(0px - var(--scale-size)); }
 
-    .w-scale-left:hover, .w-scale-right:hover {
-        cursor: w-resize;
+    .w-scale-left, .w-scale-right {
+        cursor: ew-resize;
+    }
+    
+    .w-scale-left.w-scale-top, .w-scale-right.w-scale-bottom {
+        cursor: nwse-resize;
+        z-index: 1;
     }
 
-    .w-scale-top:hover, .w-scale-bottom:hover {
-        cursor: n-resize;
+    .w-scale-right.w-scale-top, .w-scale-left.w-scale-bottom {
+        cursor: nesw-resize;
+        z-index: 1;
+    }
+
+    .w-scale-top, .w-scale-bottom {
+        cursor: ns-resize;
     }
 
     .w-header {
@@ -112,6 +140,7 @@ body {
         position: relative;
         user-select: none;
         overflow: hidden;
+        z-index: 11;
 
         .w-name {
             left: calc(var(--header-height) * .8 + var(--padding) * 2);
@@ -161,6 +190,8 @@ body {
     }
 
     .w-body {
+        z-index: 10;
+        position: relative;
         width: 100%;
         height: calc(100% - var(--header-height));
 
@@ -171,5 +202,5 @@ body {
 
 .window.w-active {
     outline: 2px solid cyan;
-    z-index: 10;
+    z-index: 1000;
 }
