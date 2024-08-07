@@ -89,6 +89,11 @@ function setup_event_listeners(cwindow: HTMLDivElement, header: HTMLDivElement) 
     let off_y = 0;
 
     const movement_event = (event: MouseEvent) => {
+        if((event.buttons & 1) === 0) {
+            is_moving = false;
+            document.removeEventListener("mousemove", movement_event);
+            return
+        }
         let x = event.clientX + off_x;
         let y = event.clientY + off_y;
 
@@ -118,11 +123,6 @@ function setup_event_listeners(cwindow: HTMLDivElement, header: HTMLDivElement) 
     });
 
     cwindow.addEventListener("mousedown", () => select_window(cwindow));
-
-    document.addEventListener("mouseup", () => {
-        is_moving = false;
-        document.removeEventListener("mousemove", movement_event)
-    })
 }
 
 function make_window(title: string, icon_src: string, body: HTMLElement, id: string): HTMLDivElement {
@@ -349,8 +349,6 @@ new App("HTML Viewer", "html_view", "assets/html_file_icon.svg", (app) => {
 const appIdPrefix = "app-";
 const windowMinHeight = 30;
 const windowMinWidth = 50;
-
-let np_text = "";
 
 const menu_element = document.querySelector("#menu .wrapper") as HTMLDivElement;
 const menu_info_element = document.querySelector("#menu-info") as HTMLParagraphElement;

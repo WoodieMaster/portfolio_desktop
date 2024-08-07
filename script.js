@@ -81,6 +81,11 @@ function setup_event_listeners(cwindow, header) {
     let off_x = 0;
     let off_y = 0;
     const movement_event = (event) => {
+        if ((event.buttons & 1) === 0) {
+            is_moving = false;
+            document.removeEventListener("mousemove", movement_event);
+            return;
+        }
         let x = event.clientX + off_x;
         let y = event.clientY + off_y;
         const bounds = cwindow.getBoundingClientRect();
@@ -107,10 +112,6 @@ function setup_event_listeners(cwindow, header) {
         document.addEventListener("mousemove", movement_event);
     });
     cwindow.addEventListener("mousedown", () => select_window(cwindow));
-    document.addEventListener("mouseup", () => {
-        is_moving = false;
-        document.removeEventListener("mousemove", movement_event);
-    });
 }
 function make_window(title, icon_src, body, id) {
     // result setup
@@ -289,7 +290,6 @@ new App("HTML Viewer", "html_view", "assets/html_file_icon.svg", (app) => {
 const appIdPrefix = "app-";
 const windowMinHeight = 30;
 const windowMinWidth = 50;
-let np_text = "";
 const menu_element = document.querySelector("#menu .wrapper");
 const menu_info_element = document.querySelector("#menu-info");
 window.addEventListener("contextmenu", (e) => e.preventDefault());
