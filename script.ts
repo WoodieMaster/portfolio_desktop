@@ -5,6 +5,9 @@ function select_window(cwindow: HTMLDivElement) {
 
     document.querySelector(".w-active")?.classList.remove(select_class);
     cwindow.classList.add(select_class);
+    const parent = cwindow.parentElement;
+
+    void parent?.appendChild(cwindow);
 }
 
 enum ScaleOptions {
@@ -124,7 +127,7 @@ function setup_event_listeners(cwindow: HTMLDivElement, header: HTMLDivElement) 
     })
 }
 
-function make_window(name: string, icon_src: string, body: HTMLElement, id: string): HTMLDivElement {
+function make_window(title: string, icon_src: string, body: HTMLElement, id: string): HTMLDivElement {
     // result setup
     const cwindow = document.createElement("div");
     cwindow.className = "window";
@@ -158,8 +161,8 @@ function make_window(name: string, icon_src: string, body: HTMLElement, id: stri
 
     //- name span
     const nameSpan = document.createElement("span");
-    nameSpan.className = "w-name";
-    nameSpan.textContent = name;
+    nameSpan.className = "w-title";
+    nameSpan.textContent = title;
 
     //- icon img
     const iconImg = document.createElement("img");
@@ -223,17 +226,22 @@ function setup_menu() {
     }
 }
 
+async function loadFile(filename: string): Promise<string> {
+    const response = await fetch("files/"+filename);
+    return response.text();
+}
+
 type WindowState = {id: string, x: number, y: number, w:number, h:number};
 
 class App {
     name: string;
     id: string;
     icon_src: string;
-    on_start: (app: App) => HTMLElement | null;
-    element: HTMLElement | null = null;
+    on_start: (app: App) => HTMLDivElement | null;
+    element: HTMLDivElement | null = null;
     is_active: boolean = false;
 
-    constructor(name: string, id: string, icon_src: string, on_start: (app: App)=>HTMLElement | null) {
+    constructor(name: string, id: string, icon_src: string, on_start: (app: App) => HTMLDivElement | null) {
         this.name = name;
         this.id = id;
         this.icon_src = icon_src;
@@ -290,6 +298,12 @@ class App {
         this.element.style.width = state.w + "px";
         this.element.style.height = state.h + "px";
     }
+
+    setWindowTitle(title: string) {
+        const el = this.element?.querySelector(".w-header .w-title");
+        if(el == undefined) return;
+        el.textContent = title;
+    }
 }
 
 function loadLocalStorage() {
@@ -307,7 +321,7 @@ function loadLocalStorage() {
 
 const apps: Map<string, App> = new Map();
 
-new App("Notepad", "np","assets/notepad.svg",(app: App) => {
+new App("Notepad", "np","assets/notepad.svg",(app) => {
     const content = document.createElement("textarea");
     content.onchange = () => {
         localStorage.setItem("app-np-text", content.value);
@@ -317,16 +331,20 @@ new App("Notepad", "np","assets/notepad.svg",(app: App) => {
     return make_window(app.name, app.icon_src, content, appIdPrefix+app.id);
 }).register();
 
-new App("Settings", "settings", "assets/settings.svg", (app: App) => {
+new App("Settings", "settings", "assets/settings.svg", (app) => {
     const content = document.createElement("div");
-    content.innerHTML = "<h1>BALLS</h1>";
+    content.innerHTML = "<h1>Test</h1>";
 
     return make_window(app.name, app.icon_src, content, appIdPrefix+app.id);
 }).register();
 
-new App("Custom Browser","browser","assets/browser.svg", (app: App) => {
+new App("HTML Viewer", "html_view", "assets/html_file_icon.svg", (app) => {
     const content = document.createElement("iframe");
-    content.src = "https://google.com";
+    content.src = "files/test.html";
+    content.onload = () => {
+        content.contentDocument!.onclick = () => select_window(app.element!)
+
+    }
 
     return make_window(app.name, app.icon_src, content, appIdPrefix+app.id);
 }).register();

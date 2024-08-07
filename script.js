@@ -1,4 +1,13 @@
 "use strict";
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 function select_window(cwindow) {
     var _a;
     const select_class = "w-active";
@@ -6,6 +15,8 @@ function select_window(cwindow) {
         return;
     (_a = document.querySelector(".w-active")) === null || _a === void 0 ? void 0 : _a.classList.remove(select_class);
     cwindow.classList.add(select_class);
+    const parent = cwindow.parentElement;
+    void (parent === null || parent === void 0 ? void 0 : parent.appendChild(cwindow));
 }
 var ScaleOptions;
 (function (ScaleOptions) {
@@ -102,7 +113,7 @@ function setup_event_listeners(cwindow, header) {
         document.removeEventListener("mousemove", movement_event);
     });
 }
-function make_window(name, icon_src, body, id) {
+function make_window(title, icon_src, body, id) {
     // result setup
     const cwindow = document.createElement("div");
     cwindow.className = "window";
@@ -127,8 +138,8 @@ function make_window(name, icon_src, body, id) {
     buttons.appendChild(closeButton);
     //- name span
     const nameSpan = document.createElement("span");
-    nameSpan.className = "w-name";
-    nameSpan.textContent = name;
+    nameSpan.className = "w-title";
+    nameSpan.textContent = title;
     //- icon img
     const iconImg = document.createElement("img");
     iconImg.className = "w-icon";
@@ -179,6 +190,12 @@ function setup_menu() {
         menu_element.appendChild(app_element);
     }
 }
+function loadFile(filename) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const response = yield fetch("files/" + filename);
+        return response.text();
+    });
+}
 class App {
     constructor(name, id, icon_src, on_start) {
         this.element = null;
@@ -228,6 +245,13 @@ class App {
         this.element.style.width = state.w + "px";
         this.element.style.height = state.h + "px";
     }
+    setWindowTitle(title) {
+        var _a;
+        const el = (_a = this.element) === null || _a === void 0 ? void 0 : _a.querySelector(".w-header .w-title");
+        if (el == undefined)
+            return;
+        el.textContent = title;
+    }
 }
 function loadLocalStorage() {
     const app_state = localStorage.getItem("app-states");
@@ -253,12 +277,15 @@ new App("Notepad", "np", "assets/notepad.svg", (app) => {
 }).register();
 new App("Settings", "settings", "assets/settings.svg", (app) => {
     const content = document.createElement("div");
-    content.innerHTML = "<h1>BALLS</h1>";
+    content.innerHTML = "<h1>Test</h1>";
     return make_window(app.name, app.icon_src, content, appIdPrefix + app.id);
 }).register();
-new App("Custom Browser", "browser", "assets/browser.svg", (app) => {
+new App("HTML Viewer", "html_view", "assets/html_file_icon.svg", (app) => {
     const content = document.createElement("iframe");
-    content.src = "https://google.com";
+    content.src = "files/test.html";
+    content.onload = () => {
+        content.contentDocument.onclick = () => select_window(app.element);
+    };
     return make_window(app.name, app.icon_src, content, appIdPrefix + app.id);
 }).register();
 const appIdPrefix = "app-";
