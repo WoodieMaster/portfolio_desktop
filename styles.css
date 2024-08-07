@@ -21,6 +21,7 @@ body {
 #app-np {
     .w-body {
         resize: none;
+        outline: none;
     }
 }
 

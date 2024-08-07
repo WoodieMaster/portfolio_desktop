@@ -27,8 +27,6 @@ function create_window_resizer(cwindow: HTMLDivElement, scaling: {x: ScaleOption
 
     window_resizer_listeners(cwindow, element, scaling);
 
-    console.log(scaling)
-
     cwindow.appendChild(element);
 }
 
@@ -325,7 +323,6 @@ new App("Notepad", "np","assets/notepad.svg",(app) => {
     const content = document.createElement("textarea");
     content.onchange = () => {
         localStorage.setItem("app-np-text", content.value);
-        console.log(np_text)
     }
     content.value = localStorage.getItem("app-np-text") ?? "";
     return make_window(app.name, app.icon_src, content, appIdPrefix+app.id);

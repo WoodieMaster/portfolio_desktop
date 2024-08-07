@@ -35,7 +35,6 @@ function create_window_resizer(cwindow, scaling) {
     else if (scaling.y == ScaleOptions.END)
         element.classList.add("w-scale-bottom");
     window_resizer_listeners(cwindow, element, scaling);
-    console.log(scaling);
     cwindow.appendChild(element);
 }
 function window_resizer_listeners(cwindow, scale_element, scaling) {
@@ -270,7 +269,6 @@ new App("Notepad", "np", "assets/notepad.svg", (app) => {
     const content = document.createElement("textarea");
     content.onchange = () => {
         localStorage.setItem("app-np-text", content.value);
-        console.log(np_text);
     };
     content.value = (_a = localStorage.getItem("app-np-text")) !== null && _a !== void 0 ? _a : "";
     return make_window(app.name, app.icon_src, content, appIdPrefix + app.id);
