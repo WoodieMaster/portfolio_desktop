@@ -3,11 +3,29 @@ function select_window(cwindow: HTMLDivElement) {
 
     if(cwindow.classList.contains(select_class)) return;
 
-    document.querySelector(".w-active")?.classList.remove(select_class);
-    cwindow.classList.add(select_class);
-    const parent = cwindow.parentElement;
+    let current_zidx = parseInt(cwindow.style.zIndex);
+    if(isNaN(current_zidx)) {
+        for (const w of document.getElementsByClassName("window")) {
+            if(cwindow === w) continue;
+            (w as HTMLHtmlElement).style.zIndex = (parseInt((w as HTMLHtmlElement).style.zIndex)-1).toString();
+        }
+    }else {
+        for (const w of document.getElementsByClassName("window")) {
+            if(cwindow === w) continue;
 
-    void parent?.appendChild(cwindow);
+            const zidx = parseInt((w as HTMLHtmlElement).style.zIndex);
+            if(zidx > current_zidx) {
+                (w as HTMLHtmlElement).style.zIndex = (zidx-1).toString();
+            }
+        }
+    }
+
+    document.getElementsByClassName(select_class)[0]?.classList.remove(select_class);
+
+
+
+    cwindow.style.zIndex = "0";
+    cwindow.classList.add(select_class);
 }
 
 enum ScaleOptions {
@@ -37,6 +55,10 @@ function window_resizer_listeners(cwindow: HTMLDivElement, scale_element: HTMLDi
     let height = 0;
 
     const movement_event = (event: MouseEvent) => {
+        if((event.buttons & 1) === 0) {
+            document.removeEventListener("mousemove", movement_event);
+            return;
+        }
         event.stopPropagation();
 
         select_window(cwindow);
@@ -79,9 +101,7 @@ function window_resizer_listeners(cwindow: HTMLDivElement, scale_element: HTMLDi
         height = bounds.height;
 
         document.addEventListener("mousemove", movement_event);
-    })
-
-    document.addEventListener("mouseup", () => document.removeEventListener("mousemove", movement_event));
+    });
 }
 
 function setup_event_listeners(cwindow: HTMLDivElement, header: HTMLDivElement) {

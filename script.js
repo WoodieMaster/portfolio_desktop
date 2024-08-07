@@ -13,10 +13,27 @@ function select_window(cwindow) {
     const select_class = "w-active";
     if (cwindow.classList.contains(select_class))
         return;
-    (_a = document.querySelector(".w-active")) === null || _a === void 0 ? void 0 : _a.classList.remove(select_class);
+    let current_zidx = parseInt(cwindow.style.zIndex);
+    if (isNaN(current_zidx)) {
+        for (const w of document.getElementsByClassName("window")) {
+            if (cwindow === w)
+                continue;
+            w.style.zIndex = (parseInt(w.style.zIndex) - 1).toString();
+        }
+    }
+    else {
+        for (const w of document.getElementsByClassName("window")) {
+            if (cwindow === w)
+                continue;
+            const zidx = parseInt(w.style.zIndex);
+            if (zidx > current_zidx) {
+                w.style.zIndex = (zidx - 1).toString();
+            }
+        }
+    }
+    (_a = document.getElementsByClassName(select_class)[0]) === null || _a === void 0 ? void 0 : _a.classList.remove(select_class);
+    cwindow.style.zIndex = "0";
     cwindow.classList.add(select_class);
-    const parent = cwindow.parentElement;
-    void (parent === null || parent === void 0 ? void 0 : parent.appendChild(cwindow));
 }
 var ScaleOptions;
 (function (ScaleOptions) {
@@ -43,6 +60,10 @@ function window_resizer_listeners(cwindow, scale_element, scaling) {
     let width = 0;
     let height = 0;
     const movement_event = (event) => {
+        if ((event.buttons & 1) === 0) {
+            document.removeEventListener("mousemove", movement_event);
+            return;
+        }
         event.stopPropagation();
         select_window(cwindow);
         if (scaling.x != ScaleOptions.NONE) {
@@ -75,7 +96,6 @@ function window_resizer_listeners(cwindow, scale_element, scaling) {
         height = bounds.height;
         document.addEventListener("mousemove", movement_event);
     });
-    document.addEventListener("mouseup", () => document.removeEventListener("mousemove", movement_event));
 }
 function setup_event_listeners(cwindow, header) {
     let off_x = 0;

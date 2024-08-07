@@ -17,6 +17,8 @@ body {
     background-blend-mode: darken;
     height: 100vh;
     overflow: hidden;
+    z-index: 0;
+    position: relative;
 }
 
 #app-np {
